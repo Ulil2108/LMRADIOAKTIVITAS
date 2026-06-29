@@ -3639,7 +3639,7 @@
                               RUMUS</div>
                             <div class="t-card-body" style="display:flex; flex-direction:column; gap:0.8em;">
                               <div style="display:flex; justify-content:center;">
-                                <div class="t-placeholder-hud" style="min-height:40px; max-height:40px; width:50%; padding:0;">
+                                <div class="t-placeholder-hud" style="min-height:0 !important; height:120px; width:50%; padding:0; overflow:hidden;">
                                   <img src="asset/img/teori_rumus_peluruhan.png" alt="Rumus Peluruhan"
                                     style="width:100%; height:100%; object-fit:contain; position:relative; z-index:2; border-radius:16px;">
                                 </div>
@@ -7362,17 +7362,24 @@ body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;font-size:10.5pt;c
             const W = 1280, H = 720;
             const vw = window.innerWidth;
             const vh = window.innerHeight;
-            const scale = Math.min(vw / W, vh / H);
-            // Terapkan scale dan geser ke tengah
+            // Batasi maksimal scale=1 agar tidak blur pada layar besar
+            const scale = Math.min(vw / W, vh / H, 1);
+            // Selalu center horizontal
             const offsetX = Math.round((vw - W * scale) / 2);
-            const offsetY = Math.round((vh - H * scale) / 2);
+            // Vertical: hanya center jika tidak di-scale (layar besar, scale=1)
+            // Pada HP/laptop kecil (scale<1), tetap di atas agar splash screen tidak turun
+            const offsetY = scale < 1 ? 0 : Math.round((vh - H) / 2);
             stage.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + ')';
             stage.style.transformOrigin = 'top left';
           }
 
-          // Jalankan saat pertama kali halaman dimuat
-          rescaleStage();
-          // Jalankan ulang setiap kali ukuran jendela berubah (resize / rotasi HP)
+          // Gunakan double-rAF agar dimensi viewport mobile sudah settle sebelum dijalankan
+          requestAnimationFrame(function () {
+            requestAnimationFrame(rescaleStage);
+          });
+          // Jalankan ulang setelah semua aset selesai dimuat (keamanan tambahan)
+          window.addEventListener('load', rescaleStage);
+          // Jalankan ulang setiap kali resize / rotasi HP
           window.addEventListener('resize', rescaleStage);
         })();
       </script>
